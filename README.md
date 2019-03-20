@@ -1,9 +1,12 @@
-couch_br.py
+**couch_br.py**
+
 Script for backuping couchdb into folder, each DB will be stored in different folder.
 All data stored in JSON in human readable format.
 Also can restore all data from stored files.
 
-USAGE: couch_br.py [-h] [-b] [-r] [-s SERVER] [-p PORT] [-d DIR] [-a AUTH]
+**USAGE**
+```
+couch_br.py [-h] [-b] [-r] [-s SERVER] [-p PORT] [-d DIR] [-a AUTH]
                    [-u USER] [-f FILTER]
 
 optional arguments:
@@ -20,11 +23,14 @@ optional arguments:
   -f FILTER, --filter FILTER
                         Filter or not filtering MODB, default no, to enable
                         set to yes
+```
+**couch_replication.py**
 
-couch_replication.py
 Make single time replication of all DBs from one couchdb to another.
 
-USAGE: couch_replication.py [-h] [-s SOURCE] [-t TARGET] [-as AUTHSOURCE]
+**USAGE**
+```
+couch_replication.py [-h] [-s SOURCE] [-t TARGET] [-as AUTHSOURCE]
                             [-d DBNAME] [-at AUTHTARGET]
 
 optional arguments:
@@ -39,3 +45,4 @@ optional arguments:
                         database name for replication only single database
   -at AUTHTARGET, --authtarget AUTHTARGET
                         path to file with credentials for target Couchdb
+```
