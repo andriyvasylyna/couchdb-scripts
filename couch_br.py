@@ -198,9 +198,7 @@ if args.backup == True:
         logger.exception("Backup of db %s failed. Exiting" % all_dbs[i])
         sys.exit(1)
 
-    os.system("/usr/bin/zabbix_sender -v -z 10.1.14.234 -p 10051 -s 'couchdb-backup.pbx.vas.sn' -k dbackup_couch -o 0 >> /var/log/couchdb/backup.log")
-    
-    logger.info("Backup done successfull")
+        logger.info("Backup done successfull")
     sys.exit(0)
 elif args.restore == True:
     logger.info("Start Restoring")
