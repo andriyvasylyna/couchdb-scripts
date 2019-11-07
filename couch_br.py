@@ -12,16 +12,6 @@ import re
 import sys
 
 
-def filter(databases):
-    yearmonth = '.*-' + "%i%i" % (datetime.date.today().year, datetime.date.today().month)
-    for i in range(len(databases)):
-        if re.match(r'.*-[0-9]{6}', databases[i]):
-            if not re.match(yearmonth, databases[i]):
-                databases.pop(i)
-    return databases
-    pass
-
-
 # read login and password from file return dict
 def get_auth(file):
     with open(file, 'r') as uf:
@@ -118,8 +108,6 @@ def main():
                              'for restore directory with files to be uploaded to server')
     parser.add_argument('-a', '--auth', action='store', help='path to file with credentials for Couchdb')
     parser.add_argument('-u', '--user', action='store', help='username in Couchdb')
-    parser.add_argument('-f', '--filter', action='store', default='No',
-                        help='Filter or not filtering MODB, default no, to enable set to yes')
 
     args = parser.parse_args()
     cdate = datetime.date.today()
@@ -179,11 +167,7 @@ def main():
         # get list of db names
         try:
             all_dbs = get(db_url + "_all_dbs", auth=HTTPBasicAuth(username, password))
-            # Filter old MODB
-            if args.filter == 'yes':
-                all_dbs = filter(all_dbs.json())
-            else:
-                all_dbs = all_dbs.json()
+            all_dbs = all_dbs.json()
             logger.info("DBs to backup: %s" % all_dbs)
         except Exception as e:
             logger.exception("Exception in get db list {}".format(e))
@@ -196,9 +180,6 @@ def main():
         except Exception as e:
             logger.exception("Backup of db %s failed. With exception {}".format(all_dbs[i], e))
             sys.exit(1)
-
-        # logger.info(os.system("zabbix_sender -vv -z 10.1.14.234 -p 10051 -s
-        # 'couchdb-backup.pbx.vas.sn' -k dbackup_couch -o 0"))
         logger.info("Backup done successfull")
         sys.exit(0)
     elif args.restore:
