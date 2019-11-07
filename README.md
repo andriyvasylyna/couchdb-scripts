@@ -7,7 +7,7 @@ Also can restore all data from stored files.
 **USAGE**
 ```
 couch_br.py [-h] [-b] [-r] [-s SERVER] [-p PORT] [-d DIR] [-a AUTH]
-                   [-u USER] [-f FILTER]
+                   [-u USER] 
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -20,9 +20,7 @@ optional arguments:
                         restore directory with files to be uploaded to server
   -a AUTH, --auth AUTH  path to file with credentials for Couchdb
   -u USER, --user USER  username in Couchdb
-  -f FILTER, --filter FILTER
-                        Filter or not filtering MODB, default no, to enable
-                        set to yes
+
 ```
 **couch_replication.py**
 
