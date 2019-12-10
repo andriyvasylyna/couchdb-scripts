@@ -1,4 +1,3 @@
-
 import datetime
 from requests import put, get
 from requests.auth import HTTPBasicAuth
@@ -10,6 +9,16 @@ import getpass
 import os
 import re
 import sys
+
+# all_dbs.json()
+def filter(databases):
+    yearmonth = '.*-' + "%i%i" % (datetime.date.today().year, datetime.date.today().month)
+    for i in range(len(databases)):
+        if re.match(r'.*-[0-9]{6}', databases[i]):
+            if not re.match(yearmonth, databases[i]):
+                databases.pop(i)
+    return databases
+    pass
 
 
 # read login and password from file return dict
@@ -23,6 +32,19 @@ def get_auth(file):
     if len(user_name) == 0 or len(password) == 0:
         raise Exception("Username or password is not set, check credentials file")
     return user_name, password
+
+
+# Defining functions
+
+
+'''
+# return number of lines in file
+def file_len(fname):
+    with open(fname) as f:
+        for i, l in enumerate(f):
+            pass
+    return i + 1
+'''
 
 
 # return list of db files in folder
@@ -40,17 +62,39 @@ def get_file_content(file_name):
         dict_content[i] = json.loads(content[i])
     return dict_content
 
+'''
+# insert single document into couchdb
+def insert_document(dburl, dbname, document, username, password):
+    if not dburl.endswith('/'):
+        dburl = dburl + '/'
+    insert_url = dburl + dbname + "/" + requests.utils.requote_uri(document["_id"])
+    result = requests.get(insert_url, auth=HTTPBasicAuth(username, password))
+    if result.status_code == 404:
+        res = requests.put(insert_url, json=document, auth=HTTPBasicAuth(username, password))
+    elif result.status_code == 200:
+        if '_rev' in result.json():
+            document['_rev'] = result.json()['_rev']
+            res = requests.put(insert_url, json=document, auth=HTTPBasicAuth(username, password))
+        else:
+            res = requests.put(insert_url, json=document, auth=HTTPBasicAuth(username, password))
+    if res.status_code == 201 or res.status_code == 304:
+        return True
+    else:
+        return False
+'''
+
 
 def insert_document(dburl, dbname, document, username, password):
     if not dburl.endswith('/'):
         dburl = dburl + '/'
-    insert_url = dburl + dbname + "/" + quote(document["_id"], safe='') + '?new_edits=false'
+    # insert_url = dburl + dbname + "/" + requests.utils.requote_uri(document["_id"]) + '?new_edits=false'
+    # insert_url = dburl + dbname + "/" + document["_id"] + '?new_edits=false'
+    insert_url = dburl + dbname + "/" + quote(document["_id"],safe='') + '?new_edits=false'
     res = put(insert_url, json=document, auth=HTTPBasicAuth(username, password))
     if res.status_code == 201 or res.status_code == 304:
         return True
     else:
         return False
-
 
 # create database if its not exist
 def create_db(dburl, dbname, username, password):
@@ -81,8 +125,10 @@ def backup_db(url, db_name, username, password, backup_dir="./", filename=None, 
         with open(backup_dir + filename, 'w') as f:
             for i in range(len(all_docs)):
                 # to store documents without revision
+                '''
                 if not revisions:
                     del all_docs[i]["doc"]["_rev"]
+                '''
                 f.write(json.dumps(all_docs[i]["doc"]) + '\n')
     else:
         raise Exception('Could not get documents from db: {}'.format(all_docs.reason))
@@ -108,6 +154,8 @@ def main():
                              'for restore directory with files to be uploaded to server')
     parser.add_argument('-a', '--auth', action='store', help='path to file with credentials for Couchdb')
     parser.add_argument('-u', '--user', action='store', help='username in Couchdb')
+    parser.add_argument('-f', '--filter', action='store', default='No',
+                        help='Filter or not filtering MODB, default no, to enable set to yes')
 
     args = parser.parse_args()
     cdate = datetime.date.today()
@@ -141,7 +189,7 @@ def main():
             password = credentials[1]
             logger.info("Credentials read node")
         except Exception as e:
-            logger.exception("Exception due credentials read {}".format(e))
+            logger.exception("Exception due credentials read " + e)
             sys.exit(1)
 
     # Global variables
@@ -167,19 +215,26 @@ def main():
         # get list of db names
         try:
             all_dbs = get(db_url + "_all_dbs", auth=HTTPBasicAuth(username, password))
-            all_dbs = all_dbs.json()
+            # Filter old MODB
+            if args.filter == 'yes':
+                all_dbs = filter(all_dbs.json())
+            else:
+                all_dbs = all_dbs.json()
             logger.info("DBs to backup: %s" % all_dbs)
         except Exception as e:
-            logger.exception("Exception in get db list {}".format(e))
+            logger.exception("Exception in get db list" + e)
             sys.exit(1)
         # Backuping start
         try:
             for i in range(len(all_dbs)):
                 logger.info("Backuping: %s" % all_dbs[i])
-                backup_db(db_url, quote(all_dbs[i], safe=''), username, password, backup_dir)
-        except Exception as e:
-            logger.exception("Backup of db %s failed. With exception {}".format(all_dbs[i], e))
+                backup_db(db_url, quote(all_dbs[i],safe=''), username, password, backup_dir)
+        except:
+            logger.exception("Backup of db %s failed. Exiting" % all_dbs[i])
             sys.exit(1)
+
+        # logger.info(os.system("zabbix_sender -vv -z 10.1.14.234 -p 10051 -s
+        # 'couchdb-backup.pbx.vas.sn' -k dbackup_couch -o 0"))
         logger.info("Backup done successfull")
         sys.exit(0)
     elif args.restore:
